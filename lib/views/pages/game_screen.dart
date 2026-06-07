@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart'; // Impor package provider
-import '../viewmodels/game_viewmodel.dart'; // Hubungkan ke file ViewModel
+import '../../viewmodels/game_viewmodel.dart'; // Hubungkan ke file ViewModel
 
 class DinDinGameScreen extends StatelessWidget {
   const DinDinGameScreen({super.key});

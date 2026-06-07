@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart'; // Impor package provider untuk MVVM
 import 'viewmodels/game_viewmodel.dart'; // Impor ViewModel kita
-import 'views/main_menu.dart'; // Impor Menu Utama kita
+import 'views/pages/main_menu.dart'; // Impor Menu Utama kita
 
 void main() {
   runApp(
