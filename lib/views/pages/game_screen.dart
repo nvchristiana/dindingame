@@ -1,27 +1,66 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart'; // Impor package provider
-import '../../viewmodels/game_viewmodel.dart'; // Hubungkan ke file ViewModel
+import 'package:provider/provider.dart';
+import '../../viewmodels/game_viewmodel.dart';
 
 class DinDinGameScreen extends StatelessWidget {
   const DinDinGameScreen({super.key});
 
+  // English Confirmation Dialog for Playing Again
+  void _showReplayConfirmation(BuildContext context, GameViewModel viewModel) {
+    showDialog(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          backgroundColor: viewModel.backgroundColor,
+          title: Text(
+            'Confirmation',
+            style: TextStyle(fontWeight: FontWeight.bold, color: viewModel.primaryColor),
+          ),
+          content: const Text(
+            'You have already played today. Are you sure you want to play again?',
+            style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
+          ),
+          actions: [
+            TextButton(
+              child: const Text('Cancel', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
+              onPressed: () {
+                Navigator.of(dialogContext).pop();
+              },
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: viewModel.primaryColor,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              child: const Text('Yes', style: TextStyle(fontWeight: FontWeight.bold)),
+              onPressed: () {
+                Navigator.of(dialogContext).pop();
+                viewModel.replayGame(); // Triggers the next reactive background theme color
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    // Menggunakan Consumer untuk mendengarkan perubahan di GameViewModel
     return Consumer<GameViewModel>(
       builder: (context, gameViewModel, child) {
         return Scaffold(
-          backgroundColor: const Color(0xFFF0E3F7),
+          backgroundColor: gameViewModel.backgroundColor,
           body: SafeArea(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
               child: Column(
                 children: [
-                  // Tombol Back menuju Menu Utama
                   Row(
                     children: [
                       IconButton(
-                        icon: const Icon(Icons.arrow_back, color: Color(0xFF3A1E54)),
+                        icon: Icon(Icons.arrow_back, color: gameViewModel.primaryColor),
                         onPressed: () {
                           Navigator.pop(context);
                         },
@@ -29,8 +68,7 @@ class DinDinGameScreen extends StatelessWidget {
                     ],
                   ),
                   
-                  // 1. GAME TITLE & INSTRUCTION
-                  const Row(
+                  Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
@@ -38,22 +76,20 @@ class DinDinGameScreen extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 32,
                           fontWeight: FontWeight.bold,
-                          color: Color(0xFF3A1E54),
+                          color: gameViewModel.primaryColor,
                         ),
                       ),
                     ],
                   ),
-                  const Text(
+                  Text(
                     'Tap to drop the fruit',
-                    style: TextStyle(fontSize: 14, color: Colors.purple),
+                    style: TextStyle(fontSize: 14, color: gameViewModel.accentColor),
                   ),
                   const SizedBox(height: 20),
 
-                  // 2. SCOREBOARD (Data diambil dari gameViewModel)
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      // Score Box
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 8),
                         decoration: BoxDecoration(
@@ -62,10 +98,9 @@ class DinDinGameScreen extends StatelessWidget {
                         ),
                         child: Text(
                           'Score: ${gameViewModel.score}',
-                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.purple),
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: gameViewModel.accentColor),
                         ),
                       ),
-                      // Best Score Box
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 8),
                         decoration: BoxDecoration(
@@ -77,21 +112,19 @@ class DinDinGameScreen extends StatelessWidget {
                           style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.orange),
                         ),
                       ),
-                      // Sound Button
                       CircleAvatar(
                         backgroundColor: Colors.white,
                         child: IconButton(
-                          icon: const Icon(Icons.volume_up, color: Colors.purple),
+                          icon: Icon(Icons.volume_up, color: gameViewModel.accentColor),
                           onPressed: () {
                             print("Sound button clicked!");
                           },
                         ),
                       ),
-                      // Reset Button (Memanggil fungsi resetGame dari ViewModel)
                       CircleAvatar(
                         backgroundColor: Colors.white,
                         child: IconButton(
-                          icon: const Icon(Icons.refresh, color: Colors.purple),
+                          icon: Icon(Icons.refresh, color: gameViewModel.accentColor),
                           onPressed: () {
                             gameViewModel.resetGame();
                           },
@@ -101,7 +134,6 @@ class DinDinGameScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 15),
 
-                  // 3. NEXT FRUIT INDICATOR (Sekor diubah menjadi dinamis tanpa const)
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 10),
                     decoration: BoxDecoration(
@@ -113,7 +145,7 @@ class DinDinGameScreen extends StatelessWidget {
                       children: [
                         const Text('Next: ', style: TextStyle(fontSize: 16)),
                         Text(
-                          gameViewModel.nextFruit, // MEMBACA EMOJI ANTRIAN BERIKUTNYA
+                          gameViewModel.nextFruit,
                           style: const TextStyle(fontSize: 20),
                         ),
                       ],
@@ -121,7 +153,6 @@ class DinDinGameScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 20),
 
-                  // 4. GAMEPLAY AREA (Menggunakan Stack untuk merender list buah)
                   Expanded(
                     child: Container(
                       decoration: BoxDecoration(
@@ -138,62 +169,115 @@ class DinDinGameScreen extends StatelessWidget {
                       clipBehavior: Clip.antiAlias,
                       child: Column(
                         children: [
-                          // Danger Zone Banner
                           Container(
                             width: double.infinity,
-                            color: Colors.red.withOpacity(0.2),
+                            color: gameViewModel.accentColor.withOpacity(0.15),
                             padding: const EdgeInsets.symmetric(vertical: 8),
-                            child: const Row(
+                            child: Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Icon(Icons.warning, color: Colors.red, size: 16),
-                                SizedBox(width: 5),
+                                Icon(Icons.flag, color: gameViewModel.accentColor, size: 16),
+                                const SizedBox(width: 5),
                                 Text(
-                                  'Danger Zone',
-                                  style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 12),
+                                  'Finish Line',
+                                  style: TextStyle(color: gameViewModel.accentColor, fontWeight: FontWeight.bold, fontSize: 12),
                                 ),
                               ],
                             ),
                           ),
                           Expanded(
                             child: Container(
-                              color: Colors.white, // Memastikan background putih mendeteksi tap sepenuhnya
+                              color: Colors.white,
                               child: GestureDetector(
                                 onTapDown: (details) {
-                                  // Memanggil fungsi handleAreaTap dari ViewModel dengan koordinat sentuhan
                                   gameViewModel.handleAreaTap(details.localPosition);
                                 },
                                 behavior: HitTestBehavior.opaque,
                                 child: Stack(
                                   children: [
                                     if (gameViewModel.fruits.isEmpty)
-                                      const Center(
+                                      Center(
                                         child: Column(
                                           mainAxisAlignment: MainAxisAlignment.center,
                                           children: [
                                             Text(
                                               '🎯 Try Tapping Here!',
-                                              style: TextStyle(color: Colors.purple, fontWeight: FontWeight.bold, fontSize: 16),
+                                              style: TextStyle(color: gameViewModel.accentColor, fontWeight: FontWeight.bold, fontSize: 16),
                                             ),
-                                            SizedBox(height: 5),
-                                            Text(
+                                            const SizedBox(height: 5),
+                                            const Text(
                                               '(Fruits will appear where you tap)',
                                               style: TextStyle(color: Colors.grey, fontSize: 12),
                                             ),
                                           ],
                                         ),
                                       ),
-                                    // Merender setiap buah acak warna-warni dari list ViewModel
+                                    
                                     ...gameViewModel.fruits.map((fruit) {
-                                      return Positioned(
-                                        left: fruit.position.dx - 15,
-                                        top: fruit.position.dy - 15,
+                                      int fruitIndex = gameViewModel.fruitPool.indexOf(fruit.emoji);
+                                      double dynamicFontSize = 24.0 + (fruitIndex * 4.0);
+
+                                      return AnimatedPositioned(
+                                        duration: const Duration(milliseconds: 50),
+                                        left: fruit.position.dx - (dynamicFontSize / 2),
+                                        top: fruit.position.dy - (dynamicFontSize / 2),
                                         child: Text(
-                                          fruit.emoji, // MEMBACA EMOJI DARI MODEL DATA
-                                          style: const TextStyle(fontSize: 30),
+                                          fruit.emoji,
+                                          style: BoxTextStyle(fontSize: dynamicFontSize),
                                         ),
                                       );
                                     }),
+
+                                    if (gameViewModel.isGameFinished)
+                                      Container(
+                                        color: Colors.black.withOpacity(0.6),
+                                        width: double.infinity,
+                                        height: double.infinity,
+                                        child: Center(
+                                          child: Card(
+                                            color: gameViewModel.backgroundColor,
+                                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                                            margin: const EdgeInsets.all(30),
+                                            child: Padding(
+                                              padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 30),
+                                              child: Column(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  Text(
+                                                    '✨ Finish ✨',
+                                                    style: TextStyle(fontSize: 36, fontWeight: FontWeight.bold, color: gameViewModel.primaryColor),
+                                                  ),
+                                                  const SizedBox(height: 15),
+                                                  Text(
+                                                    gameViewModel.currentQuote,
+                                                    textAlign: TextAlign.center,
+                                                    style: TextStyle(fontSize: 16, color: gameViewModel.primaryColor, fontWeight: FontWeight.bold),
+                                                  ),
+                                                  const SizedBox(height: 10),
+                                                  Text(
+                                                    'Your Score: ${gameViewModel.score}',
+                                                    textAlign: TextAlign.center,
+                                                    style: TextStyle(fontSize: 15, color: gameViewModel.accentColor, fontWeight: FontWeight.w500),
+                                                  ),
+                                                  const SizedBox(height: 25),
+                                                  ElevatedButton.icon(
+                                                    style: ElevatedButton.styleFrom(
+                                                      backgroundColor: gameViewModel.primaryColor,
+                                                      foregroundColor: Colors.white,
+                                                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                                                    ),
+                                                    icon: const Icon(Icons.replay),
+                                                    label: const Text('Play Again', style: TextStyle(fontWeight: FontWeight.bold)),
+                                                    onPressed: () {
+                                                      _showReplayConfirmation(context, gameViewModel);
+                                                    },
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
                                   ],
                                 ),
                               ),
@@ -212,4 +296,8 @@ class DinDinGameScreen extends StatelessWidget {
       },
     );
   }
+}
+
+class BoxTextStyle extends TextStyle {
+  const BoxTextStyle({super.fontSize}) : super(height: 1.0);
 }
