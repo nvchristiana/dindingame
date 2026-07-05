@@ -63,7 +63,7 @@ class DinDinGameScreen extends StatelessWidget {
                     }).toList(),
                   ),
 
-                  // ==================== 2. GRID DISPLAY (Radio - PINDAH KE ATAS) ====================
+                  // ==================== 2. GRID DISPLAY (Radio) ====================
                   const SizedBox(height: 15),
                   _buildSectionTitle('Grid Display', viewModel),
                   Row(
@@ -92,7 +92,7 @@ class DinDinGameScreen extends StatelessWidget {
                     ],
                   ),
 
-                  // ==================== 3. EMOJI THEME (Buttons - PINDAH KE BAWAH GRID) ====================
+                  // ==================== 3. EMOJI THEME (Buttons) ====================
                   const SizedBox(height: 20),
                   _buildSectionTitle('Emoji Theme', viewModel),
                   const SizedBox(height: 10),
@@ -121,7 +121,7 @@ class DinDinGameScreen extends StatelessWidget {
                     }).toList(),
                   ),
 
-                  // ==================== 4. BOX STYLE (Buttons - PALING BAWAH) ====================
+                  // ==================== 4. BOX STYLE (Buttons) ====================
                   const SizedBox(height: 20),
                   _buildSectionTitle('Gameplay Box Style', viewModel),
                   const SizedBox(height: 10),
@@ -153,6 +153,45 @@ class DinDinGameScreen extends StatelessWidget {
               ),
             );
           },
+        );
+      },
+    );
+  }
+
+  // Dialog Konfirmasi Bermain Lagi (Replay Dialog Confirmation) - DIPASANG KEMBALI
+  void _showReplayConfirmation(BuildContext context, GameViewModel viewModel) {
+    showDialog(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          backgroundColor: viewModel.backgroundColor,
+          title: Text(
+            'Confirmation',
+            style: TextStyle(fontWeight: FontWeight.bold, color: viewModel.primaryColor),
+          ),
+          content: const Text(
+            'You have already played today. Are you sure you want to play again?',
+            style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
+          ),
+          actions: [
+            TextButton(
+              child: const Text('Cancel', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
+              onPressed: () => Navigator.of(dialogContext).pop(),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: viewModel.primaryColor,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              child: const Text('Yes', style: TextStyle(fontWeight: FontWeight.bold)),
+              onPressed: () {
+                Navigator.of(dialogContext).pop();
+                viewModel.replayGame(); 
+              },
+            ),
+          ],
         );
       },
     );
@@ -414,7 +453,7 @@ class DinDinGameScreen extends StatelessWidget {
                   style: ElevatedButton.styleFrom(backgroundColor: vm.primaryColor, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12)),
                   icon: const Icon(Icons.replay),
                   label: const Text('Play Again'),
-                  onPressed: () => vm.replayGame(),
+                  onPressed: () => _showReplayConfirmation(context, vm), // Sambungkan ke dialog konfirmasi
                 ),
               ],
             ),
