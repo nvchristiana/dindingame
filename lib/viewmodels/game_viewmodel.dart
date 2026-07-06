@@ -28,6 +28,9 @@ class GameViewModel extends ChangeNotifier {
     "Wonderful effort! You are getting better every game! 🚀",
     "Success is about giving your best effort every day. 🎯",
     "Beautifully played! Take a deep breath and smile. 😊"
+    "Every small step leads to big achievements! 🏆",
+    "Believe in yourself, you are doing great! 💪",
+    "Mistakes are proof that you are trying. Keep it up! ⚡",
   ];
   String _currentQuote = "";
   int _playCount = 0;
