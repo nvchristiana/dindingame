@@ -1,3 +1,9 @@
+Demo:
+
+
+https://github.com/user-attachments/assets/af6e664a-cf1f-4a28-a1f7-92b317f02c8a
+
+
 # DinDin Game - MVVM Architecture Implementation
 
 A hyper-casual drop-and-merge mobile game built using Flutter and Dart, implementing the MVVM (Model-View-ViewModel) architectural pattern and Provider for state management.
