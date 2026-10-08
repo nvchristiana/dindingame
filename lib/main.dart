@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart'; // Impor package provider untuk MVVM
-import 'viewmodels/game_viewmodel.dart'; // Impor ViewModel kita
-import 'views/pages/main_menu.dart'; // Impor Menu Utama kita
+import 'package:provider/provider.dart';
+import 'viewmodels/game_viewmodel.dart';
+import 'views/pages/main_menu.dart';
 
 void main() {
   runApp(
-    // Membungkus seluruh aplikasi dengan Provider agar GameViewModel bisa diakses di semua halaman
     ChangeNotifierProvider(
       create: (context) => GameViewModel(),
       child: const MyApp(),
@@ -18,9 +17,20 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
+    return MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: DinDinMainMenu(), // Halaman awal aplikasi tetap Menu Utama
+      builder: (context, child) {
+        return Container(
+          color: Colors.black, // Warna latar belakang di luar tampilan HP
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 480), // Batas lebar layar HP
+              child: child,
+            ),
+          ),
+        );
+      },
+      home: const DinDinMainMenu(),
     );
   }
 }
