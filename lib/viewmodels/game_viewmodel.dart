@@ -7,7 +7,10 @@ class GameViewModel extends ChangeNotifier {
   int _score = 0;
   int _bestScore = 0;
   final List<FruitModel> _fruits = [];
-  
+
+  // Ukuran area game yang SEBENARNYA terlihat di layar (dikirim dari screen)
+  Size _areaSize = Size.zero;
+
   // DATA POOL EMOJI: Mengelola 3 Tema Utama secara dinamis
   final Map<String, List<String>> _allThemes = {
     'Fruit': ['🍒', '🍓', '🍇', '🍊', '🍎', '🍌', '🍍', '🍉'],
@@ -17,7 +20,7 @@ class GameViewModel extends ChangeNotifier {
 
   String _selectedTheme = 'Fruit'; // Pilihan default awal
   List<String> _currentPool = ['🍒', '🍓', '🍇', '🍊', '🍎', '🍌', '🍍', '🍉'];
-  
+
   String _nextFruit = '🍒';
   Timer? _fallingTimer;
   bool _isGameFinished = false;
@@ -27,7 +30,7 @@ class GameViewModel extends ChangeNotifier {
     "Progress over perfection. Great job! 🌟",
     "Wonderful effort! You are getting better every game! 🚀",
     "Success is about giving your best effort every day. 🎯",
-    "Beautifully played! Take a deep breath and smile. 😊"
+    "Beautifully played! Take a deep breath and smile. 😊",
     "Every small step leads to big achievements! 🏆",
     "Believe in yourself, you are doing great! 💪",
     "Mistakes are proof that you are trying. Keep it up! ⚡",
@@ -35,7 +38,7 @@ class GameViewModel extends ChangeNotifier {
   String _currentQuote = "";
   int _playCount = 0;
 
-  String _difficulty = 'Normal'; 
+  String _difficulty = 'Normal';
   String _boxTheme = 'Classic';
   bool _isGridOn = false;
 
@@ -55,9 +58,43 @@ class GameViewModel extends ChangeNotifier {
   String get boxTheme => _boxTheme;
   String get selectedTheme => _selectedTheme;
   bool get isGridOn => _isGridOn;
+  Size get areaSize => _areaSize;
+
+  // ==================== UKURAN AREA GAME ====================
+
+  // Dipanggil dari screen lewat LayoutBuilder
+  void setAreaSize(Size size) {
+    if (size == _areaSize) return;
+    _areaSize = size;
+
+    // Jika area mengecil (mis. jendela browser diubah), tarik buah yang
+    // terlanjur berada di luar area agar tetap terlihat.
+    for (int i = 0; i < _fruits.length; i++) {
+      final half = _halfSizeOf(_fruits[i].emoji);
+      final double maxX = max(half, size.width - half);
+      final double maxY = max(half, size.height - half);
+      final p = _fruits[i].position;
+      final newX = p.dx.clamp(half, maxX).toDouble();
+      final newY = p.dy.clamp(half, maxY).toDouble();
+      if (newX != p.dx || newY != p.dy) {
+        _fruits[i] = FruitModel(position: Offset(newX, newY), emoji: _fruits[i].emoji);
+      }
+    }
+    notifyListeners();
+  }
+
+  // Setengah ukuran emoji (harus sama dengan rumus ukuran di screen: 24 + idx * 4)
+  double _halfSizeOf(String emoji) {
+    int idx = _currentPool.indexOf(emoji);
+    if (idx < 0) idx = 0;
+    return (24.0 + idx * 4.0) / 2;
+  }
+
+  // Tinggi lantai: memakai tinggi area asli. Jika belum diketahui, pakai 410.
+  double get _groundLevel => _areaSize.height > 0 ? _areaSize.height : 410.0;
 
   // ==================== LOGIKA CORE MVVM ====================
-  
+
   // Fungsi Mengganti Tema Kumpulan Emoji
   void setEmojiTheme(String themeName) {
     _selectedTheme = themeName;
@@ -90,24 +127,24 @@ class GameViewModel extends ChangeNotifier {
   Color get boxThemeColor {
     if (_boxTheme == 'Wood') return const Color(0xFFF5DEB3);
     if (_boxTheme == 'Grass') return const Color(0xFFE8F5E9);
-    return Colors.white; 
+    return Colors.white;
   }
 
   // Logika Perubahan Tema Warna Latar Belakang (Dinamis tiap Sesi)
   Color get backgroundColor {
     int index = _playCount % 4;
-    if (index == 1) return const Color(0xFFFCE8E6); 
-    if (index == 2) return const Color(0xFFE6F4EA); 
-    if (index == 3) return const Color(0xFFE8F0FE); 
-    return const Color(0xFFF0E3F7); 
+    if (index == 1) return const Color(0xFFFCE8E6);
+    if (index == 2) return const Color(0xFFE6F4EA);
+    if (index == 3) return const Color(0xFFE8F0FE);
+    return const Color(0xFFF0E3F7);
   }
 
   Color get primaryColor {
     int index = _playCount % 4;
-    if (index == 1) return const Color(0xFF660E0D); 
-    if (index == 2) return const Color(0xFF0D441D); 
-    if (index == 3) return const Color(0xFF0B2F61); 
-    return const Color(0xFF3A1E54); 
+    if (index == 1) return const Color(0xFF660E0D);
+    if (index == 2) return const Color(0xFF0D441D);
+    if (index == 3) return const Color(0xFF0B2F61);
+    return const Color(0xFF3A1E54);
   }
 
   Color get accentColor {
@@ -125,13 +162,21 @@ class GameViewModel extends ChangeNotifier {
   // Menerima Aksi Ketukan Jari dari View (Screen)
   void handleAreaTap(Offset position) {
     if (_isGameFinished) return;
-    
+
     _score++;
     if (_score > _bestScore) {
       _bestScore = _score;
     }
-    
-    _fruits.add(FruitModel(position: Offset(position.dx, 20.0), emoji: _nextFruit));
+
+    // Batasi posisi X agar buah tidak muncul di luar lebar area
+    final half = _halfSizeOf(_nextFruit);
+    double x = position.dx;
+    if (_areaSize.width > 0) {
+      final double maxX = max(half, _areaSize.width - half);
+      x = x.clamp(half, maxX).toDouble();
+    }
+
+    _fruits.add(FruitModel(position: Offset(x, 20.0), emoji: _nextFruit));
     _generateNextFruit();
     _startFallingMechanism();
     notifyListeners();
@@ -140,15 +185,15 @@ class GameViewModel extends ChangeNotifier {
   // Simulasi Mekanisme Gravitasi Jatuh Berbasis Software (60 FPS)
   void _startFallingMechanism() {
     if (_fallingTimer != null && _fallingTimer!.isActive) return;
-    
+
     _fallingTimer = Timer.periodic(const Duration(milliseconds: 16), (timer) {
       bool valuesChanged = false;
-      double groundLevel = 410.0; 
       double fallingSpeed = _difficulty == 'Easy' ? 4.0 : 8.0;
 
       for (int i = 0; i < _fruits.length; i++) {
-        double targetY = groundLevel;
-        
+        // Lantai mengikuti tinggi area yang terlihat, dikurangi setengah ukuran buah
+        double targetY = _groundLevel - _halfSizeOf(_fruits[i].emoji);
+
         for (int j = 0; j < _fruits.length; j++) {
           if (i == j) continue;
           if (_fruits[j].position.dy > _fruits[i].position.dy &&
@@ -159,19 +204,19 @@ class GameViewModel extends ChangeNotifier {
             }
           }
         }
-        
+
         if (_fruits[i].position.dy < targetY) {
-          double nextY = _fruits[i].position.dy + fallingSpeed; 
+          double nextY = _fruits[i].position.dy + fallingSpeed;
           if (nextY > targetY) nextY = targetY;
-          
+
           _fruits[i] = FruitModel(
-            position: Offset(_fruits[i].position.dx, nextY), 
+            position: Offset(_fruits[i].position.dx, nextY),
             emoji: _fruits[i].emoji,
           );
           valuesChanged = true;
         }
       }
-      
+
       if (!valuesChanged) {
         timer.cancel();
         _checkMergeLogic();
@@ -183,43 +228,43 @@ class GameViewModel extends ChangeNotifier {
   // Logika Pengecekan Tabrakan & Evolusi Penggabungan (Merge Logic)
   void _checkMergeLogic() {
     bool mergedOccurred = false;
-    
+
     for (int i = 0; i < _fruits.length; i++) {
       for (int j = i + 1; j < _fruits.length; j++) {
         if (_fruits[i].emoji == _fruits[j].emoji) {
           double distance = (_fruits[i].position - _fruits[j].position).distance;
-          
+
           if (distance < 38.0) {
             int currentIndex = _currentPool.indexOf(_fruits[i].emoji);
             int nextIndex = (currentIndex + 1) % _currentPool.length;
             String upgradedEmoji = _currentPool[nextIndex];
-            
+
             Offset midPoint = Offset(
-              (_fruits[i].position.dx + _fruits[j].position.dx) / 2, 
+              (_fruits[i].position.dx + _fruits[j].position.dx) / 2,
               (_fruits[i].position.dy + _fruits[j].position.dy) / 2,
             );
-            
+
             // Penghapusan indeks aman dari belakang (j dulu baru i agar indeks tidak geser)
-            _fruits.removeAt(j); 
+            _fruits.removeAt(j);
             _fruits.removeAt(i);
-            
+
             _fruits.add(FruitModel(position: midPoint, emoji: upgradedEmoji));
             _score += 15;
-            
+
             if (_score > _bestScore) {
               _bestScore = _score;
             }
-            
-            mergedOccurred = true; 
+
+            mergedOccurred = true;
             break;
           }
         }
       }
       if (mergedOccurred) break;
     }
-    
+
     if (mergedOccurred) {
-      _startFallingMechanism(); 
+      _startFallingMechanism();
     } else {
       _checkFinishCondition();
     }
@@ -239,24 +284,24 @@ class GameViewModel extends ChangeNotifier {
   }
 
   // Reset Sesi Bermain Lagi
-  void replayGame() { 
-    _playCount++; 
-    resetGame(); 
+  void replayGame() {
+    _playCount++;
+    resetGame();
   }
 
   // Reset Total Kondisi Board Permainan
-  void resetGame() { 
-    _fallingTimer?.cancel(); 
-    _score = 0; 
-    _isGameFinished = false; 
-    _fruits.clear(); 
-    _generateNextFruit(); 
-    notifyListeners(); 
+  void resetGame() {
+    _fallingTimer?.cancel();
+    _score = 0;
+    _isGameFinished = false;
+    _fruits.clear();
+    _generateNextFruit();
+    notifyListeners();
   }
 
-  @override 
-  void dispose() { 
-    _fallingTimer?.cancel(); 
-    super.dispose(); 
+  @override
+  void dispose() {
+    _fallingTimer?.cancel();
+    super.dispose();
   }
 }
