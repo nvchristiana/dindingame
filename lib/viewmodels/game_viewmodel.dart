@@ -67,8 +67,7 @@ class GameViewModel extends ChangeNotifier {
     if (size == _areaSize) return;
     _areaSize = size;
 
-    // Jika area mengecil (mis. jendela browser diubah), tarik buah yang
-    // terlanjur berada di luar area agar tetap terlihat.
+   
     for (int i = 0; i < _fruits.length; i++) {
       final half = _halfSizeOf(_fruits[i].emoji);
       final double maxX = max(half, size.width - half);
@@ -190,9 +189,13 @@ class GameViewModel extends ChangeNotifier {
       bool valuesChanged = false;
       double fallingSpeed = _difficulty == 'Easy' ? 4.0 : 8.0;
 
+      // Jarak aman agar emoji tidak terpotong tepi bawah area
+      const double floorMargin = 16.0;
+
       for (int i = 0; i < _fruits.length; i++) {
-        // Lantai mengikuti tinggi area yang terlihat, dikurangi setengah ukuran buah
-        double targetY = _groundLevel - _halfSizeOf(_fruits[i].emoji);
+        // Lantai = tinggi area terlihat - setengah ukuran buah - jarak aman
+        double targetY =
+            _groundLevel - _halfSizeOf(_fruits[i].emoji) - floorMargin;
 
         for (int j = 0; j < _fruits.length; j++) {
           if (i == j) continue;
@@ -224,7 +227,6 @@ class GameViewModel extends ChangeNotifier {
       notifyListeners();
     });
   }
-
   // Logika Pengecekan Tabrakan & Evolusi Penggabungan (Merge Logic)
   void _checkMergeLogic() {
     bool mergedOccurred = false;
